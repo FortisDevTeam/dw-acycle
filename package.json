@@ -1,0 +1,26 @@
+{
+  "name": "dw-tick",
+  "version": "1.0.0",
+  "description": "Scripts to recycle, update variables and feed data into various contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DestinyDevTeam/dw-tick.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DestinyDevTeam/dw-tick/issues"
+  },
+  "homepage": "https://github.com/DestinyDevTeam/dw-tick#readme",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "eosjs": "^22.1.0",
+    "express": "^4.17.1",
+    "node-cron": "^3.0.0",
+    "node-fetch": "^2.6.1"
+  }
+}
