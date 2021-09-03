@@ -36,18 +36,22 @@ auctions = [
 cron.schedule(process.env.CRON, async function() {
     console.log('running a task` every second');
     try {
-        for(let i=0; i<auctions.length; i++){
-          await setfreeze(auctions[i].auctionid,3);
-
-          console.log("recycle auction with auction id ", auctions[i].auctionid);
-          await recyclebyaid(auctions[i].auctionid);
-
-          console.log("stake giveout with auction id ", auctions[i].auctionid, " and cycle count ", auctions[i].stakecycle);
-          await stakegiveout(auctions[i].auctionid, auctions[i].auctioncycle);
-          await setfreeze(auctions[i].auctionid,0);
-
-          auctions[i].auctioncycle += 1;
-          auctions[i].stakecycle += 1;
+        if(process.env.ACTIVE == "TRUE") {
+          for(let i=0; i<auctions.length; i++){
+            await setfreeze(auctions[i].auctionid,3);
+  
+            console.log("recycle auction with auction id ", auctions[i].auctionid);
+            await recyclebyaid(auctions[i].auctionid);
+  
+            console.log("stake giveout with auction id ", auctions[i].auctionid, " and cycle count ", auctions[i].stakecycle);
+            await stakegiveout(auctions[i].auctionid, auctions[i].auctioncycle);
+            await setfreeze(auctions[i].auctionid,0);
+  
+            auctions[i].auctioncycle += 1;
+            auctions[i].stakecycle += 1;
+          }
+        } else {
+          console.log("not active");
         }
     } catch(exp) {
         console.log("Something Wrong");
