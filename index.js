@@ -26,8 +26,8 @@ console.log("program executing");
 auctions = [
   {
     auctionid: 0,
-    stakecycle: 15,
-    auctioncycle: 15,
+    stakecycle: 107,
+    auctioncycle: 19,
   }
 ];
 
