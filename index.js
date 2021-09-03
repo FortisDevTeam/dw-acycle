@@ -6,7 +6,6 @@ const { Api, JsonRpc, RpcError } = require('eosjs');
 const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig');
 const fetch = require('node-fetch');
 const  { TextEncoder, TextDecoder } = require('util');
-require('dotenv').config();
 
 const defaultPrivateKey = process.env.PRIVATE_KEY;
 const signatureProvider = new JsSignatureProvider([defaultPrivateKey]);
@@ -20,15 +19,36 @@ const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), te
 // const { setfreeze, recyclebyaid, stakegiveout } = require("./eos-action.js");
 
 app = express()
+// app.listen(process.env.PORT);
 
 console.log("program executing");
 
-cron.schedule('0 1 * * *', async function() {
+auctions = [
+  {
+    auctionid: 0,
+    stakecycle: 15,
+    auctioncycle: 15,
+  }
+];
+
+
+
+cron.schedule(process.env.CRON, async function() {
     console.log('running a task` every second');
     try {
-        await setfreeze(0,3);
-        await recyclebyaid(0);
-        await stakegiveout(0,0);
+        for(let i=0; i<auctions.length; i++){
+          await setfreeze(auctions[i].auctionid,3);
+
+          console.log("recycle auction with auction id ", auctions[i].auctionid);
+          await recyclebyaid(auctions[i].auctionid);
+
+          console.log("stake giveout with auction id ", auctions[i].auctionid, " and cycle count ", auctions[i].stakecycle);
+          await stakegiveout(auctions[i].auctionid, auctions[i].auctioncycle);
+          await setfreeze(auctions[i].auctionid,0);
+
+          auctions[i].auctioncycle += 1;
+          auctions[i].stakecycle += 1;
+        }
     } catch(exp) {
         console.log("Something Wrong");
         console.log(exp);
@@ -46,7 +66,7 @@ async function setfreeze(config_id, freeze_level) {
               name: 'setfreeze',
               authorization: [{
                 actor: process.env.ACTOR_NAME,
-                permission: 'active',
+                permission: process.env.PERMISSION,
               }],
               data: {
                 config_id: config_id,
@@ -62,7 +82,7 @@ async function setfreeze(config_id, freeze_level) {
         console.log("setfreeze SUCCESS with freeze_level = ", freeze_level);
     } catch (exp) {
         console.log("setfreeze ran into error");
-        // console.log(exp);
+        console.log(exp);
     }
 
 }
@@ -75,7 +95,7 @@ async function recyclebyaid(auction_id) {
               name: 'recyclebyaid',
               authorization: [{
                 actor: process.env.ACTOR_NAME,
-                permission: 'active',
+                permission: process.env.PERMISSION,
               }],
               data: {
                 auction_id: auction_id,
@@ -89,7 +109,7 @@ async function recyclebyaid(auction_id) {
         console.log("recyclebyaid SUCCESS with auction_id = ", auction_id)
     } catch(exp) {
         console.log("recyclebyaid ran into error");
-        // console.log(exp);
+        console.log(exp);
     }
 }
 
@@ -101,7 +121,7 @@ async function stakegiveout(auction_id, cycle_count) {
               name: 'stakegiveout',
               authorization: [{
                 actor: process.env.ACTOR_NAME,
-                permission: 'active',
+                permission: process.env.PERMISSION,
               }],
               data: {
                 auction_id: auction_id,
@@ -113,9 +133,9 @@ async function stakegiveout(auction_id, cycle_count) {
             expireSeconds: 30,
           });
         //   console.dir(result);
-        console.log("stakegiveout SUCCESS with auction_id = ", auction_id);
+        console.log("stakegiveout SUCCESS with auction_id = ", auction_id, " and cycle count ", cycle_count);
     } catch(exp) {
         console.log("stakegiveout ran into error");
-        // console.log(exp)
+        console.log(exp)
     }
 }
