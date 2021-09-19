@@ -10,7 +10,7 @@ const  { TextEncoder, TextDecoder } = require('util');
 const defaultPrivateKey = process.env.PRIVATE_KEY;
 const signatureProvider = new JsSignatureProvider([defaultPrivateKey]);
 
-const rpc = new JsonRpc('https://testnet.telos.caleos.io:443', { fetch });
+const rpc = new JsonRpc(process.env.RPC, { fetch });
 
 const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
 
@@ -26,8 +26,8 @@ console.log("program executing");
 auctions = [
   {
     auctionid: 0,
-    stakecycle: 15,
-    auctioncycle: 15,
+    stakecycle: 107,
+    auctioncycle: 22,
   }
 ];
 
@@ -39,12 +39,16 @@ cron.schedule(process.env.CRON, async function() {
         if(process.env.ACTIVE == "TRUE") {
           for(let i=0; i<auctions.length; i++){
             await setfreeze(auctions[i].auctionid,3);
+            await new Promise(resolve => setTimeout(resolve, process.env.WAIT_AUCTION_CYCLE));
   
             console.log("recycle auction with auction id ", auctions[i].auctionid);
             await recyclebyaid(auctions[i].auctionid);
+            await new Promise(resolve => setTimeout(resolve, process.env.WAIT_STAKE_CYCLE));
   
             console.log("stake giveout with auction id ", auctions[i].auctionid, " and cycle count ", auctions[i].stakecycle);
             await stakegiveout(auctions[i].auctionid, auctions[i].auctioncycle);
+            await new Promise(resolve => setTimeout(resolve, process.env.WAIT_OPEN));
+            
             await setfreeze(auctions[i].auctionid,0);
   
             auctions[i].auctioncycle += 1;
