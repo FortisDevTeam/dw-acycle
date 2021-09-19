@@ -10,7 +10,7 @@ const  { TextEncoder, TextDecoder } = require('util');
 const defaultPrivateKey = process.env.PRIVATE_KEY;
 const signatureProvider = new JsSignatureProvider([defaultPrivateKey]);
 
-const rpc = new JsonRpc('https://testnet.telos.caleos.io:443', { fetch });
+const rpc = new JsonRpc(process.env.RPC, { fetch });
 
 const api = new Api({ rpc, signatureProvider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
 
