@@ -27,7 +27,7 @@ auctions = [
   {
     auctionid: 0,
     stakecycle: 107,
-    auctioncycle: 23,
+    auctioncycle: 24,
   }
 ];
 
