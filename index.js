@@ -58,19 +58,19 @@ cron.schedule(process.env.CRON, async function () {
         // STEP 1: Freeze the contract
         await setfreeze(auctions[i].auctionid, 3);
         await new Promise((resolve) =>
-          setTimeout(resolve, process.env.WAIT_AUCTION_CYCLE)
+          setTimeout(resolve, process.env.WAIT_AUCT)
         );
 
         // STEP 2: Call recyclebyaid action
         await recyclebyaid(auctions[i].auctionid);
         await new Promise((resolve) =>
-          setTimeout(resolve, process.env.WAIT_LOOPSTAKE_CYCLE)
+          setTimeout(resolve, process.env.WAIT_LOOP)
         );
 
         // STEP 3: Call loopstakes action
         await loopstakes(auctions[i].auctionid, auction_cycle_count);
         await new Promise((resolve) =>
-          setTimeout(resolve, process.env.WAIT_STAKE_CYCLE)
+          setTimeout(resolve, process.env.WAIT_STKE)
         );
 
         // STEP 4: Call stakegiveout action
@@ -165,7 +165,7 @@ async function recyclebyaid(auction_id) {
 
 async function loopstakes(auction_id, auction_cycle) {
   const stakes = await getStakesCount();
-  const denominator = process.env.LOOPSTAKE_DENOMINATOR;
+  const denominator = process.env.LOOP_DNM;
   const quotient = Math.floor(stakes / denominator);
   const remainder = stakes % denominator;
 
@@ -179,7 +179,7 @@ async function loopstakes(auction_id, auction_cycle) {
 async function stakegiveout(auction_id, auction_cycle) {
   const count = await getTotalStakeCount();
   const numberOfAcceptedTokens = await getAcceptedTokensCount(auction_id);
-  const denominator = process.env.STAKE_DENOMINATOR;
+  const denominator = process.env.STKE_DNM;
   const quotient = Math.floor(count / denominator);
   const remainder = count % denominator;
   for (let i = 0; i < numberOfAcceptedTokens; i++) {
