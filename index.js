@@ -55,6 +55,9 @@ cron.schedule(process.env.CRON, async function () {
         // Get stake cycle count
         stake_cycle_count = entry.rows[0].stake_cycle_count;
 
+        // STEP 0: Set the indexes for sanity
+        await setindex();
+
         // STEP 1: Freeze the contract
         await setfreeze(auctions[i].auctionid, 3);
         await new Promise((resolve) =>
@@ -126,6 +129,62 @@ async function setfreeze(config_id, freeze_level) {
     console.log("setfreeze SUCCESS with freeze_level = ", freeze_level);
   } catch (exp) {
     console.log("setfreeze ran into error");
+    console.log(exp);
+  }
+}
+
+async function setindex() {
+  try {
+    console.log("setindex action STARTED");
+    const result1 = await api.transact(
+      {
+        actions: [
+          {
+            account: process.env.CONTRACT_NAME,
+            name: "setstkgividx",
+            authorization: [
+              {
+                actor: process.env.ACTOR_NAME,
+                permission: process.env.PERMISSION,
+              },
+            ],
+            data: {
+              idx: 0,
+            },
+          },
+        ],
+      },
+      {
+        blocksBehind: 3,
+        expireSeconds: 30,
+      }
+    );
+    const result2 = await api.transact(
+      {
+        actions: [
+          {
+            account: process.env.CONTRACT_NAME,
+            name: "setlpstkidx",
+            authorization: [
+              {
+                actor: process.env.ACTOR_NAME,
+                permission: process.env.PERMISSION,
+              },
+            ],
+            data: {
+              idx: 0,
+            },
+          },
+        ],
+      },
+      {
+        blocksBehind: 3,
+        expireSeconds: 30,
+      }
+    );
+    console.log("setindex SUCCESS");
+  } catch (exp) {
+    console.log("setindex ran into error");
     console.log(exp);
   }
 }
@@ -302,18 +361,3 @@ async function getAcceptedTokensCount(auction_id) {
   const data = table.rows.filter((row) => row.auction_id == auction_id);
   return data.length;
 }
-
-/*
-
-TODO:
-
-1. Freeze (as usual)
-2. Get the total number of stakes
-3. Loop through all the stakes
-4. Get the total number of entries in totalstakes table
-5. Calculate and call stakegiveout
-6. Unfreeze (as usual)
-
-
-
-*/
