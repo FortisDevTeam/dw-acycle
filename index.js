@@ -39,6 +39,8 @@ cron.schedule(process.env.CRON, async function () {
   try {
     if (process.env.ACTIVE == "TRUE") {
       for (let i = 0; i < auctions.length; i++) {
+        
+        // Querrying the cyclecount table
         entry = await rpc.get_table_rows({
           json: true,
           code: process.env.CONTRACT_NAME,
@@ -169,10 +171,13 @@ async function loopstakes(auction_id, auction_cycle) {
   const quotient = Math.floor(stakes / denominator);
   const remainder = stakes % denominator;
 
+  console.log("stakes = ", stakes);
+
   for (let i = 0; i < quotient; i++) {
     await callLoopstakeAction(auction_id, auction_cycle, denominator);
   }
   await callLoopstakeAction(auction_id, auction_cycle, remainder);
+
   console.log("loopstakes action COMPLETED");
 }
 
@@ -270,14 +275,42 @@ async function callLoopstakeAction(auction_id, auction_cycle, count) {
 }
 
 async function getStakesCount() {
-  const res = await rpc.get_table_rows({
+  
+  // Get the last row in stakes table
+  const lastRow = await rpc.get_table_rows({
     json: true,
     code: process.env.CONTRACT_NAME,
     scope: process.env.CONTRACT_NAME,
     table: "stakes",
-    limit: 10000000000000,
-  });
-  return res.rows.length;
+    reverse: true,
+    limit: 1
+  })
+
+  const lastStakeId = lastRow.rows[0].stake_id;
+
+  let res = await rpc.get_table_rows({
+    json: true,
+    code: process.env.CONTRACT_NAME,
+    scope: process.env.CONTRACT_NAME,
+    table: "stakes",
+    limit: 100,
+  })
+  let count = res.rows.length;
+  let lastFetchedStakeId = res.rows.at(-1).stake_id;
+
+  while(lastFetchedStakeId != lastStakeId) {
+    res = await rpc.get_table_rows({
+      json: true,
+      code: process.env.CONTRACT_NAME,
+      scope: process.env.CONTRACT_NAME,
+      table: "stakes",
+      lower_bound: lastFetchedStakeId + 1,
+      limit: 100
+    })
+    count += res.rows.length
+    lastFetchedStakeId = res.rows.at(-1).stake_id
+  }
+  return count;
 }
 
 async function getTotalStakeCount() {
