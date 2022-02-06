@@ -1,16 +1,16 @@
-const cron = require("node-cron");
-const express = require("express");
-require("dotenv").config();
+const cron = require('node-cron')
+const express = require('express')
+require('dotenv').config()
 
-const { Api, JsonRpc, RpcError } = require("eosjs");
-const { JsSignatureProvider } = require("eosjs/dist/eosjs-jssig");
-const fetch = require("node-fetch");
-const { TextEncoder, TextDecoder } = require("util");
+const { Api, JsonRpc, RpcError } = require('eosjs')
+const { JsSignatureProvider } = require('eosjs/dist/eosjs-jssig')
+const fetch = require('node-fetch')
+const { TextEncoder, TextDecoder } = require('util')
 
 const defaultPrivateKey = process.env.PRIVATE_KEY;
 const signatureProvider = new JsSignatureProvider([defaultPrivateKey]);
 
-const rpc = new JsonRpc(process.env.RPC, { fetch });
+const rpc = new JsonRpc(process.env.RPC, { fetch })
 
 const api = new Api({
   rpc,
@@ -22,38 +22,40 @@ const api = new Api({
 // import { setfreeze, recyclebyaid, stakegiveout } from "./eos-action.js"
 // const { setfreeze, recyclebyaid, stakegiveout } = require("./eos-action.js");
 
-app = express();
+app = express()
 // app.listen(process.env.PORT);
+const ROWS_PER_PAGE = 20
 
-console.log("program executing");
+console.log('program executing')
 
 auctions = [
   {
     auctionid: 0,
   },
-];
+]
 
-entry = null;
+entry = null
 
 cron.schedule(process.env.CRON, async function () {
   try {
-    if (process.env.ACTIVE == "TRUE") {
+    if (process.env.ACTIVE == 'TRUE') {
       for (let i = 0; i < auctions.length; i++) {
+        // Querrying the cyclecount table
         entry = await rpc.get_table_rows({
           json: true,
           code: process.env.CONTRACT_NAME,
           scope: process.env.CONTRACT_NAME,
-          table: "cyclecount",
+          table: 'cyclecount',
           limit: 1,
           lower_bound: auctions[i].auctionid,
           upper_bound: auctions[i].auctionid,
-        });
+        })
 
         // Get auction cycle count
-        auction_cycle_count = entry.rows[0].auction_cycle_count;
+        auction_cycle_count = entry.rows[0].auction_cycle_count
 
         // Get stake cycle count
-        stake_cycle_count = entry.rows[0].stake_cycle_count;
+        stake_cycle_count = entry.rows[0].stake_cycle_count
 
         // STEP 1: Freeze the contract
         await setfreeze(auctions[i].auctionid, 3);
@@ -68,10 +70,10 @@ cron.schedule(process.env.CRON, async function () {
         );
 
         // STEP 3: Call loopstakes action
-        await loopstakes(auctions[i].auctionid, auction_cycle_count);
+        await loopstakes(auctions[i].auctionid, auction_cycle_count)
         await new Promise((resolve) =>
-          setTimeout(resolve, process.env.WAIT_STKE)
-        );
+          setTimeout(resolve, process.env.WAIT_STKE),
+        )
 
         // STEP 4: Call stakegiveout action
         await stakegiveout(auctions[i].auctionid, auction_cycle_count);
@@ -86,15 +88,15 @@ cron.schedule(process.env.CRON, async function () {
         // auctions[i].stakecycle += 1;
       }
     } else {
-      console.log("not active");
+      console.log('not active')
     }
   } catch (exp) {
-    console.log("Something Wrong");
-    console.log(exp);
+    console.log('Something Wrong')
+    console.log(exp)
   }
-});
+})
 
-app.listen(process.env.PORT);
+app.listen(process.env.PORT)
 
 async function setfreeze(config_id, freeze_level) {
   try {
@@ -164,16 +166,19 @@ async function recyclebyaid(auction_id) {
 }
 
 async function loopstakes(auction_id, auction_cycle) {
-  const stakes = await getStakesCount();
-  const denominator = process.env.LOOP_DNM;
-  const quotient = Math.floor(stakes / denominator);
-  const remainder = stakes % denominator;
+  const stakes = await getStakesCount()
+  const denominator = process.env.LOOP_DNM
+  const quotient = Math.floor(stakes / denominator)
+  const remainder = stakes % denominator
+
+  console.log('stakes = ', stakes)
 
   for (let i = 0; i < quotient; i++) {
     await callLoopstakeAction(auction_id, auction_cycle, denominator);
   }
   await callLoopstakeAction(auction_id, auction_cycle, remainder);
-  console.log("loopstakes action COMPLETED");
+
+  console.log('loopstakes action COMPLETED')
 }
 
 async function stakegiveout(auction_id, auction_cycle) {
@@ -270,14 +275,27 @@ async function callLoopstakeAction(auction_id, auction_cycle, count) {
 }
 
 async function getStakesCount() {
-  const res = await rpc.get_table_rows({
-    json: true,
-    code: process.env.CONTRACT_NAME,
-    scope: process.env.CONTRACT_NAME,
-    table: "stakes",
-    limit: 10000000000000,
-  });
-  return res.rows.length;
+  console.log("calling getStakesCount")
+  let count = 0
+  let res
+  let lower_bound
+
+  while (true) {
+    res = await rpc.get_table_rows({
+      json: true,
+      code: process.env.CONTRACT_NAME,
+      scope: process.env.CONTRACT_NAME,
+      table: 'stakes',
+      limit: ROWS_PER_PAGE,
+      lower_bound: lower_bound
+    })
+    count += res.rows.length
+
+    if (res.more) lower_bound = res.next_key
+    else break
+  }
+
+  return count
 }
 
 async function getTotalStakeCount() {
@@ -285,10 +303,10 @@ async function getTotalStakeCount() {
     json: true,
     code: process.env.CONTRACT_NAME,
     scope: process.env.CONTRACT_NAME,
-    table: "totalstake",
+    table: 'totalstake',
     limit: 10000000000000,
-  });
-  return res.rows.length;
+  })
+  return res.rows.length
 }
 
 async function getAcceptedTokensCount(auction_id) {
@@ -296,11 +314,11 @@ async function getAcceptedTokensCount(auction_id) {
     json: true,
     code: process.env.CONTRACT_NAME,
     scope: process.env.CONTRACT_NAME,
-    table: "acceptedtkns",
+    table: 'acceptedtkns',
     limit: 10000000000000,
-  });
-  const data = table.rows.filter((row) => row.auction_id == auction_id);
-  return data.length;
+  })
+  const data = table.rows.filter((row) => row.auction_id == auction_id)
+  return data.length
 }
 
 /*
