@@ -84,8 +84,6 @@ cron.schedule(process.env.CRON, async function () {
         // STEP 5: Unfreeze
         await setfreeze(auctions[i].auctionid, 0);
 
-        // auctions[i].auctioncycle += 1;
-        // auctions[i].stakecycle += 1;
       }
     } else {
       console.log('not active')
@@ -167,16 +165,22 @@ async function recyclebyaid(auction_id) {
 
 async function loopstakes(auction_id, auction_cycle) {
   const stakes = await getStakesCount()
-  const denominator = process.env.LOOP_DNM
+  const denominator = parseInt(process.env.LOOP_DNM)
+  console.log(denominator, "   ", stakes)
   const quotient = Math.floor(stakes / denominator)
   const remainder = stakes % denominator
+
+  console.log("quotient => ", quotient)
+  console.log("remainder => ", remainder)
 
   console.log('stakes = ', stakes)
 
   for (let i = 0; i < quotient; i++) {
     await callLoopstakeAction(auction_id, auction_cycle, denominator);
+    console.log("callLoopstakeAction(", auction_id, auction_cycle, denominator, ");")
   }
   await callLoopstakeAction(auction_id, auction_cycle, remainder);
+  console.log("callLoopstakeAction(", auction_id, auction_cycle, remainder, ");")
 
   console.log('loopstakes action COMPLETED')
 }
@@ -331,7 +335,5 @@ TODO:
 4. Get the total number of entries in totalstakes table
 5. Calculate and call stakegiveout
 6. Unfreeze (as usual)
-
-
 
 */
