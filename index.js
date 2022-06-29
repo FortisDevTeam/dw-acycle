@@ -30,7 +30,16 @@ console.log('program executing')
 
 auctions = [
   {
-    auctionid: 0,
+    auctionid: 1,
+  },
+  {
+    auctionid: 2,
+  },
+  {
+    auctionid: 3,
+  },
+  {
+    auctionid: 4,
   },
 ]
 
